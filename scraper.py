@@ -1,17 +1,26 @@
 import requests
 import re
+from Listing import *
 from bs4 import BeautifulSoup
 
 
 def save_locations(locations):
-	print('hi')
 	with open('locations.txt', 'w') as file:
 		for location in locations:
 			print(location)
 			file.write(location + '\n')
 	file.close()
 
-def garagesalefinder_scraper(locations):
+def update_locations(city, locations, new_listing):
+	if city in locations:
+		locations[city].append(new_listing)
+	else:
+		locations[city] = [new_listing]
+	return locations
+
+
+def garagesalefinder_scraper():
+	locations = {}
 	url = 'https://garagesalefinder.com/yard-sales/naperville-il/'
 	main_page = requests.get(url)
 	soup = BeautifulSoup(main_page.content, 'html.parser')
@@ -21,23 +30,30 @@ def garagesalefinder_scraper(locations):
 		listings = results.find_all('div', class_=a_class)
 		for listing in listings:
 			address_zip = listing.find('span', class_='sale-click').text.strip()
-			address = address_zip(address_zip[0:len(address_zip) - 5])
-			locations.append(address[0:len(address) - 5])
-			print(address[0:len(address) - 5])
-			date = listing.find('div', class_='sale-date').text.strip()
+			# zip_code = address_zip.split()[-1].strip()
+			city = address_zip.split(',')[1].strip()
+			# address = address_zip[0:address_zip.index(zip_code)].strip()
+			date_range = listing.find('div', class_='sale-date').text.strip()
+			date_range = re.sub(r',', '', date_range)
+			date_range = re.split(r'[^\w\s]', date_range)
 			link = listing.find(class_='sale-url').attrs['href']
 			page = requests.get(link)
 			result = BeautifulSoup(page.content, 'html.parser')
 			times = result.find_all(class_='date-time')
-			print(f'{address} | {date}')
-			# for time in times:
-			# 	time = time.text.strip()
-			# 	hours = time[time.index(',',10)+6:]
-			# 	days = time[:time.index(',',10)+6]
-			# 	print(f'{days} | {hours}')
-			# print()
+			sale_times = ''
+			for time in times:
+				time = time.text.strip()
+				days = time[:time.index(',',10)+6]
+				hours = time[time.index(',',10)+6:]
+				sale_times += f'{days} | {hours}\n'
+				#print(f'{days} | {hours}')
+			new_listing = Listing(address_zip, date_range, sale_times)
+			print(new_listing)
+			new_listing.get_times()
+			locations = update_locations(city, locations, new_listing)
 
-def gsalr_scraper(locations):
+def gsalr_scraper():
+	locations = {}
 	url = 'https://gsalr.com/garage-sales-naperville-il.html?loc=41.75082,-88.15292'
 	main_page = requests.get(url)
 	soup = BeautifulSoup(main_page.content, 'html.parser')
@@ -63,37 +79,42 @@ def gsalr_scraper(locations):
 			# 	print(time)
 			# print()
 
-def yardsalesnet_scraper(locations):
+def yardsalesnet_scraper():
 	locations = {}
-	url = 'https://yardsales.net/naperville-il/'
-	page = requests.get(url)
-	results = BeautifulSoup(page.content, 'html.parser')
-	listings = results.find_all(attrs={'itemprop':'url'})
-	for listing in listings:
-		new_url = 'https://yardsales.net' + listing.attrs['href']
-		page = requests.get(new_url)
+	cur_listing = -1
+	total_listings = 0
+	page_num = 1
+	while (cur_listing <= total_listings):
+		url = f'https://yardsales.net/naperville-il/p:{page_num}'
+		page = requests.get(url)
 		results = BeautifulSoup(page.content, 'html.parser')
-		results = results.find(class_='sale-dates').text
-		results = re.sub(r'[^\w\s&\-,:.]', '|', results)[1:]
-		results = results.split('|')
-		# print(results)
-		address = results[-1][results[-1][:18].index('m', 14)+1:]
-		# print(address)
-		locations.append(address)
-		results[-1] = results[-1][:results[-1][:18].index('m', 14)+1]
-		# for i in range(0, len(results), 2):
-		# 	print(f'{results[i].strip()} | {results[i+1].strip()}')
-
-def unique_listings():
-	locations = {}
+		if (page_num == 1):
+			listing_count = results.find_all(class_='page-nav-count')[-1].text
+			total_listings = listing_count[(listing_count.index('of') + 2):].strip()
+			cur_listing = listing_count[(listing_count.index('-') + 2):(listing_count.index('of'))].strip()
+		listings = results.find_all(attrs={'itemprop':'url'})		
+		for listing in listings:
+			new_url = 'https://yardsales.net' + listing.attrs['href']
+			page = requests.get(new_url)
+			results = BeautifulSoup(page.content, 'html.parser')
+			results = results.find(class_='sale-dates').text
+			results = re.sub(r'[^\w\s&\-,:.]', '|', results)[1:]
+			results = results.split('|')
+			print(results)
+			address = results[-1][results[-1][:18].index('m', 14)+1:]
+			print(address)
+			# locations.append(address)
+			results[-1] = results[-1][:results[-1][:18].index('m', 14)+1]
+			# for i in range(0, len(results), 2):
+			# 	print(f'{results[i].strip()} | {results[i+1].strip()}')
+		if (cur_listing <= total_listings):
+			page_num += 1
 
 def main():
-	locations = []
-	# garagesalefinder_scraper(locations)
-	# gsalr_scraper(locations)
-	# yardsalesnet_scraper(locations)
+	garagesalefinder_scraper()
+	# gsalr_scraper()
+	# yardsalesnet_scraper()
 	# locations = [*set(locations)]
 	# save_locations(locations)
 
 main()
-
