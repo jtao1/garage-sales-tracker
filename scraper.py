@@ -3,7 +3,6 @@ import re
 from Listing import *
 from bs4 import BeautifulSoup
 
-
 def save_locations(locations):
 	with open('locations.txt', 'w') as file:
 		for location in locations:
@@ -17,7 +16,6 @@ def update_locations(city, locations, new_listing):
 	else:
 		locations[city] = [new_listing]
 	return locations
-
 
 def garagesalefinder_scraper():
 	locations = {}
@@ -35,6 +33,7 @@ def garagesalefinder_scraper():
 			# address = address_zip[0:address_zip.index(zip_code)].strip()
 			date_range = listing.find('div', class_='sale-date').text.strip()
 			date_range = re.sub(r',', '', date_range)
+			date_range = re.sub(r'  ', ' ', date_range)
 			date_range = re.split(r'[^\w\s]', date_range)
 			link = listing.find(class_='sale-url').attrs['href']
 			page = requests.get(link)
@@ -44,11 +43,12 @@ def garagesalefinder_scraper():
 			for time in times:
 				time = time.text.strip()
 				days = time[:time.index(',',10)+6]
+				days = re.sub('  ', '', days)
 				hours = time[time.index(',',10)+6:]
 				sale_times += f'{days} | {hours}\n'
 				#print(f'{days} | {hours}')
 			new_listing = Listing(address_zip, date_range, sale_times)
-			print(new_listing)
+			# print(new_listing)
 			new_listing.get_times()
 			locations = update_locations(city, locations, new_listing)
 
@@ -63,21 +63,34 @@ def gsalr_scraper():
 		listings = results.find_all('div', class_=a_class)
 		for listing in listings:
 			street = listing.find(attrs={'itemprop':'streetAddress'}).text.strip()
-			locality = listing.find(attrs={'itemprop':'addressLocality'}).text.strip()
-			region = listing.find(attrs={'itemprop':'addressRegion'}).text.strip()
+			city = listing.find(attrs={'itemprop':'addressLocality'}).text.strip()
+			state = listing.find(attrs={'itemprop':'addressRegion'}).text.strip()
 			postal = listing.find(attrs={'itemprop':'postalCode'}).text.strip()
-			start_date = listing.find(attrs={'itemprop':'startDate'}).attrs['content']
-			end_date = listing.find(attrs={'itemprop':'endDate'}).attrs['content']
+			# start_date = listing.find(attrs={'itemprop':'startDate'}).attrs['content']
+			# end_date = listing.find(attrs={'itemprop':'endDate'}).attrs['content']
 			listing_url = listing.find(class_='sale-title').attrs['href']
 			page = requests.get(listing_url)
 			result = BeautifulSoup(page.content, 'html.parser')
 			times = result.find_all(class_='date-time')
-			locations.append(f'{street}, {locality}, {region}')
-			# print(f'{street}, {locality}, {region} {postal} | {start_date} - {end_date}')
-			# for time in times:
-			# 	time = re.sub(r'[^\w\s&\-,:.]', '', time.text.strip())
-			# 	print(time)
-			# print()
+			start_date = re.sub(r'[^\w\s&\-,:.]', '', times[0].text.strip())
+			start_date = start_date.split(',')
+			start_date = f'{start_date[0]}{start_date[1]}'
+			end_date = re.sub(r'[^\w\s&\-,:.]', '', times[-1].text.strip())
+			end_date = end_date.split(',')
+			end_date = f'{end_date[0]}{end_date[1]}'
+			date_range = [start_date, end_date]
+			address = f'{street}, {city}, {state} {postal}'
+			sale_times = ''
+			date_mapping = {'Mon': 'Monday', 'Tue': 'Tuesday', 'Wed': 'Wednesday', 'Thu': 'Thursday',
+		   					'Fri': 'Friday', 'Sat': 'Saturday', 'Sun': 'Sunday'}
+			for time in times:
+				time = re.sub(r'[^\w\s&\-,:.]', '', time.text.strip())
+				time = re.sub(r'^[aA-zZ]{3}', lambda x: date_mapping[x.group()], time)
+				time = re.sub(r'([\d]{4})', lambda x: f'{x.group()} |', time)
+				sale_times += f'{time} \n'
+			new_listing = Listing(address, date_range, sale_times)
+			# print(new_listing)
+			locations = update_locations(city, locations, new_listing)
 
 def yardsalesnet_scraper():
 	locations = {}
@@ -111,8 +124,8 @@ def yardsalesnet_scraper():
 			page_num += 1
 
 def main():
-	garagesalefinder_scraper()
-	# gsalr_scraper()
+	# garagesalefinder_scraper()
+	gsalr_scraper()
 	# yardsalesnet_scraper()
 	# locations = [*set(locations)]
 	# save_locations(locations)
