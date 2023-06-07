@@ -1,7 +1,9 @@
 import requests
 import re
+from datetime import datetime
 from Listing import *
 from bs4 import BeautifulSoup
+
 
 def update_locations(city, locations, new_listing):
 	if city in locations:
@@ -41,7 +43,7 @@ def garagesalefinder_scraper():
 				days = time[:time.index(',',10)+6]
 				days = re.sub('  ', ' ', days)
 				hours = time[time.index(',',10)+6:]
-				sale_times += f'{days} | {hours}\n'
+				sale_times += f'- {days} | {hours}\n'
 				#print(f'{days} | {hours}')
 			new_listing = Listing(address_zip, date_range, sale_times, coords)
 			# print(new_listing)
@@ -92,7 +94,7 @@ def gsalr_scraper():
 					time = re.sub(r'[^\w\s&\-,:.]', '', time.text.strip())
 					time = re.sub(r'^[aA-zZ]{3}', lambda x: date_mapping[x.group()], time)
 					time = re.sub(r'([\d]{4})', lambda x: f'{x.group()} |', time)
-					sale_times += f'{time} \n'
+					sale_times += f'- {time} \n'
 			new_listing = Listing(address, date_range, sale_times, coords)
 			# new_listing.get_coords()
 			locations = update_locations(city, locations, new_listing)
@@ -131,7 +133,7 @@ def yardsalesnet_scraper():
 				sale_times = ''
 				for i in range(0, len(results), 2):
 					# print(f'{results[i].strip()} | {results[i+1].strip()}')
-					sale_times += f'{results[i].strip()} | {results[i+1].strip()}\n'
+					sale_times += f'- {results[i].strip()} | {results[i+1].strip()}\n'
 			city = address.split(',')[1].strip()
 			new_listing = Listing(address, date_range, sale_times, coords)
 			locations = update_locations(city, locations, new_listing)
@@ -170,6 +172,7 @@ def merge_dicts(dict1, dict2):
 def save_locations(locations):
 	num_listing = 0
 	with open('locations.txt', 'w') as file:
+		file.write(str(datetime.utcnow()) + '\n')
 		for city in locations:
 			listings = locations[city]
 			for listing in listings:
@@ -180,17 +183,52 @@ def save_locations(locations):
 		final = f'The total number of listings is: {num_listing}'
 		file.write(final + '\n')
 
-def main():
-	garagesalefinder = garagesalefinder_scraper()
-	print('len: ', len(garagesalefinder))
-	gsalr = gsalr_scraper()
-	print('len: ', len(gsalr))
-	merged =  merge_dicts(garagesalefinder, gsalr)
-	print('len: ', len(merged))
-	yardsalesnet = yardsalesnet_scraper()
-	print('len: ', len(yardsalesnet))
-	merged = merge_dicts(merged, yardsalesnet)
-	print('len: ', len(merged))
-	save_locations(merged)	
+def write_file():
+	with open('locations.txt', 'r') as file:
+		file_time = datetime.strptime(file.readline().strip(), '%Y-%m-%d %H:%M:%S.%f')
+		delta = (datetime.utcnow() - file_time).total_seconds()		
+	if delta >= 82800: #23 hours = 82800 seconds
+		with open('locations.txt', 'w') as file:
+			garagesalefinder = garagesalefinder_scraper()
+			print('len: ', len(garagesalefinder))
+			gsalr = gsalr_scraper()
+			print('len: ', len(gsalr))
+			merged =  merge_dicts(garagesalefinder, gsalr)
+			print('len: ', len(merged))
+			yardsalesnet = yardsalesnet_scraper()
+			print('len: ', len(yardsalesnet))
+			merged = merge_dicts(merged, yardsalesnet)
+			print('len: ', len(merged))
+			save_locations(merged)	
 
+def read_file():
+	with open('locations.txt', 'r') as file:
+		listings = []
+		file_time = datetime.strptime(file.readline().strip(), '%Y-%m-%d %H:%M:%S.%f')
+		lines = file.readlines()
+		sale_times = ''
+		location = ''
+		date_range = ''
+		coords = ''
+		for line in lines:
+				if line == '\n':
+					date_range = date_range.split('-')
+					new_listing = Listing(location, date_range, sale_times, coords)
+					listings.append(new_listing)
+					sale_times = ''
+				else:
+					if line[0] == '-':
+						sale_times += line
+					else:
+						if line.find('The total number of listings') == -1:
+							[location, date_range, coords] = line.split('|')
+		return listings
+
+def main():
+	write_file()
+	print('pass')
+	listings = read_file()
+	for listing in listings:
+		print(listing)
+		print(listing.get_times())
 main()
