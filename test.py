@@ -10,14 +10,17 @@ times = '''
 - Sunday, June 11, 2023 | 8:00 am - 2:30 pm
 		'''
 listing = Listing(location, date_range, times, coords)
-with open('locations.txt', 'w') as file:
-	file.write(str(datetime.utcnow()) + '\n')
-	file.write(str(listing))
-	file.write(str(listing.get_times())  + '\n')
+# with open('locations.txt', 'w') as file:
+# 	file.write(str(datetime.utcnow()) + '\n')
+# 	file.write(str(listing))
+# 	file.write(str(listing.get_times())  + '\n')
 
-with open('locations.txt', 'r') as file:
-	line = file.readline().strip()
-	print(line)
-	dt = datetime.strptime(line, '%Y-%m-%d %H:%M:%S.%f')
-	delta = (datetime.utcnow() - dt).total_seconds()
-	print(delta)
+# with open('locations.txt', 'r') as file:
+# 	line = file.readline().strip()
+# 	print(line)
+# 	dt = datetime.strptime(line, '%Y-%m-%d %H:%M:%S.%f')
+# 	delta = (datetime.utcnow() - dt).total_seconds()
+# 	print(delta)
+
+# coords = [ float(coord) for coord in listing.coords]
+print(listing.coords)

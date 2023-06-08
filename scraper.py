@@ -221,14 +221,20 @@ def read_file():
 						sale_times += line
 					else:
 						if line.find('The total number of listings') == -1:
+							# print(line.split('|'))
 							[location, date_range, coords] = line.split('|')
+							coords = coords.split(',')
+							lat = coords[0][coords[0].index("'")+1:-1]
+							lon = coords[1][coords[1].index("'")+1:-3]
+							coords = (lat, lon)
 		return listings
 
 def main():
 	write_file()
 	print('pass')
 	listings = read_file()
-	for listing in listings:
-		print(listing)
-		print(listing.get_times())
-main()
+	# for listing in listings:
+	# 	print(listing)
+
+
+# main()
