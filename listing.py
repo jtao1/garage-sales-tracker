@@ -42,4 +42,3 @@ class Listing:
         # if self.street == other.street:
         #     if self.date_start == other.date_start and self.date_end == other.date_end:
         #         return True
-
