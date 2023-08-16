@@ -864,8 +864,4 @@
 - Fri, Sep 8, 2023 | 9:00 am - 3:00 pm
 - Sat, Sep 9, 2023 | 9:00 am - 3:00 pm
 
-10808 Major Ave, Chicago Ridge, IL None | Fri Aug 25 - Sat Aug 26 | ['41.69570600', '-87.76203100']
-- Fri, Aug 25, 2023 | 8:00 am - 5:00 pm
-- Sat, Aug 26, 2023 | 8:00 am - 5:00 pm
-
 The total number of listings is: 200
