@@ -16,12 +16,12 @@ with open('locations.txt', 'w') as file:
 	file.write(str(listing))
 	file.write(str(listing.get_times())  + '\n')
 
-with open('locations.txt', 'r') as file:
-	line = file.readline().strip()
-	print(line)
-	dt = datetime.strptime(line, '%Y-%m-%d %H:%M:%S.%f')
-	delta = (datetime.utcnow() - dt).total_seconds()
-	print(delta)
+# with open('locations.txt', 'r') as file:
+# 	line = file.readline().strip()
+# 	print(line)
+# 	dt = datetime.strptime(line, '%Y-%m-%d %H:%M:%S.%f')
+# 	delta = (datetime.utcnow() - dt).total_seconds()
+# 	print(delta)
 
-coords = [ float(coord) for coord in listing.coords]
-print(listing.coords)
+# coords = [ float(coord) for coord in listing.coords]
+# print(listing.coords)

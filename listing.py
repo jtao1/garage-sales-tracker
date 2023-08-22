@@ -31,6 +31,9 @@ class Listing:
     def get_coords(self):
         return self.coords
 
+    def get_data(self):
+        return [f'{self.street}, {self.city}, {self.state}', self.postal, self.date_start, self.date_end, self.coords[0], self.coords[1]]
+
     def compare_to(self, other):
         # print('self', self.coords)
         # print('other', other.coords)

@@ -213,6 +213,19 @@ def write_file():
 			print('len: ', len(merged))
 			save_locations(merged)	
 
+def scrape_merge_data():
+	garagesalefinder = garagesalefinder_scraper()
+	print('len: ', len(garagesalefinder))
+	gsalr = gsalr_scraper()
+	print('len: ', len(gsalr))
+	merged =  merge_dicts(garagesalefinder, gsalr)
+	print('len: ', len(merged))
+	yardsalesnet = yardsalesnet_scraper()
+	print('len: ', len(yardsalesnet))
+	merged = merge_dicts(merged, yardsalesnet)
+	print('len: ', len(merged))
+	return merged
+
 def read_file():
 	with open('locations.txt', 'r') as file:
 		listings = []
